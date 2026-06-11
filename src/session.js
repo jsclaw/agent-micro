@@ -1,6 +1,6 @@
 /**
  * Session persistence: a session is the raw messages array stored as JSON
- * under the group workspace, so containers can resume conversations the
+ * under the agent workspace, so containers can resume conversations the
  * same way the Claude Code runner does with its session IDs.
  */
 

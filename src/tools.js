@@ -183,7 +183,7 @@ function runBash(command, timeoutMs) {
 }
 
 function workspaceDir() {
-  return process.env.JSCLAW_WORKSPACE || '/workspace/group';
+  return process.env.JSCLAW_WORKSPACE || '/workspace/agent';
 }
 
 function resolvePath(p) {

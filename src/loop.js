@@ -54,18 +54,27 @@ async function executeTool(name, input) {
  * @param {string} [params.model]
  * @param {Array} [params.tools] - Tool definitions (default: all built-ins)
  * @param {number} [params.maxIterations]
- * @returns {Promise<{ result: string, messages: Array }>}
+ * @returns {Promise<{ result: string, messages: Array, usage: { input_tokens: number, output_tokens: number } }>}
  */
 export async function runAgentLoop({ prompt, messages = [], system, model, tools = ALL_TOOL_DEFS, maxIterations = DEFAULT_MAX_ITERATIONS }) {
   messages.push({ role: 'user', content: [{ type: 'text', text: prompt }] });
 
   const effectiveModel = model || process.env.JSCLAW_MICRO_MODEL || DEFAULT_MODEL;
   let lastText = '';
+  // Accumulated across iterations; cache reads/writes count as input —
+  // they are context the model consumed.
+  const usage = { input_tokens: 0, output_tokens: 0 };
 
   for (let i = 0; i < maxIterations; i++) {
     trimContext(messages);
 
     const response = await createMessage({ model: effectiveModel, messages, system, tools });
+    if (response.usage) {
+      usage.input_tokens += (response.usage.input_tokens || 0)
+        + (response.usage.cache_read_input_tokens || 0)
+        + (response.usage.cache_creation_input_tokens || 0);
+      usage.output_tokens += response.usage.output_tokens || 0;
+    }
 
     messages.push({ role: 'assistant', content: response.content });
 
@@ -74,7 +83,7 @@ export async function runAgentLoop({ prompt, messages = [], system, model, tools
 
     const toolUses = response.content.filter((b) => b.type === 'tool_use');
     if (response.stop_reason !== 'tool_use' || toolUses.length === 0) {
-      return { result: lastText, messages };
+      return { result: lastText, messages, usage };
     }
 
     const results = [];
@@ -85,5 +94,5 @@ export async function runAgentLoop({ prompt, messages = [], system, model, tools
     messages.push({ role: 'user', content: results });
   }
 
-  return { result: lastText || '[stopped: iteration limit reached]', messages };
+  return { result: lastText || '[stopped: iteration limit reached]', messages, usage };
 }

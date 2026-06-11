@@ -253,7 +253,7 @@ async function main() {
   // Query loop: run query, wait for IPC, run again
   while (true) {
     try {
-      const { result } = await runAgentLoop({
+      const { result, usage } = await runAgentLoop({
         prompt: fullPrompt,
         messages,
         system,
@@ -267,6 +267,7 @@ async function main() {
         status: 'success',
         result,
         newSessionId: currentSessionId,
+        ...(usage && { usage }),
       });
     } catch (err) {
       writeOutput({

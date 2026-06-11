@@ -38,20 +38,24 @@ test('agent loop executes a tool call and returns the final text', async (t) => 
         { type: 'text', text: 'Writing the file now.' },
         { type: 'tool_use', id: 'tu_1', name: 'write_file', input: { path: 'out.txt', content: 'done' } },
       ],
+      usage: { input_tokens: 100, cache_read_input_tokens: 50, output_tokens: 20 },
     },
     {
       stop_reason: 'end_turn',
       content: [{ type: 'text', text: 'File written.' }],
+      usage: { input_tokens: 200, output_tokens: 10 },
     },
   ]);
 
-  const { result, messages } = await runAgentLoop({
+  const { result, messages, usage } = await runAgentLoop({
     prompt: 'write a file',
     system: 'test system',
     model: 'claude-test',
   });
 
   assert.equal(result, 'File written.');
+  // Usage accumulates across iterations; cache reads count as input
+  assert.deepEqual(usage, { input_tokens: 350, output_tokens: 30 });
   assert.equal(readFileSync(join(dir, 'out.txt'), 'utf-8'), 'done');
 
   // Two API calls: initial, then with the tool result appended

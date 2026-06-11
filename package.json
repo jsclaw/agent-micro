@@ -14,7 +14,7 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "lint": "node --check runner.js && node --check src/api.js && node --check src/tools.js && node --check src/jsclaw-tools.js && node --check src/loop.js && node --check src/session.js && node --check src/index.js",
+    "lint": "node --check runner.js && node --check src/api.js && node --check src/tools.js && node --check src/jsclaw-tools.js && node --check src/loop.js && node --check src/mcp.js && node --check src/session.js && node --check src/index.js",
     "docker:build": "docker build -t jsclaw-agent-micro:latest -f container/Dockerfile ."
   },
   "keywords": ["jsclaw", "agent", "anthropic", "claude", "zero-dependency"],

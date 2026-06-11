@@ -38,7 +38,14 @@ export function trimContext(messages, budget = DEFAULT_CONTEXT_CHAR_BUDGET) {
   }
 }
 
-async function executeTool(name, input) {
+async function executeTool(name, input, externalTools) {
+  if (externalTools?.has(name)) {
+    try {
+      return await externalTools.get(name)(input);
+    } catch (err) {
+      return `Error: ${err.message}`;
+    }
+  }
   if (JSCLAW_TOOL_NAMES.has(name)) return executeJsclawTool(name, input);
   return executeCoreTool(name, input);
 }
@@ -56,7 +63,7 @@ async function executeTool(name, input) {
  * @param {number} [params.maxIterations]
  * @returns {Promise<{ result: string, messages: Array, usage: { input_tokens: number, output_tokens: number } }>}
  */
-export async function runAgentLoop({ prompt, messages = [], system, model, tools = ALL_TOOL_DEFS, maxIterations = DEFAULT_MAX_ITERATIONS }) {
+export async function runAgentLoop({ prompt, messages = [], system, model, tools = ALL_TOOL_DEFS, externalTools, maxIterations = DEFAULT_MAX_ITERATIONS }) {
   messages.push({ role: 'user', content: [{ type: 'text', text: prompt }] });
 
   const effectiveModel = model || process.env.JSCLAW_MICRO_MODEL || DEFAULT_MODEL;
@@ -88,7 +95,7 @@ export async function runAgentLoop({ prompt, messages = [], system, model, tools
 
     const results = [];
     for (const use of toolUses) {
-      const output = await executeTool(use.name, use.input || {});
+      const output = await executeTool(use.name, use.input || {}, externalTools);
       results.push({ type: 'tool_result', tool_use_id: use.id, content: output });
     }
     messages.push({ role: 'user', content: results });

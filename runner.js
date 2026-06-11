@@ -244,7 +244,12 @@ async function main() {
     fullPrompt += '\n\n[Pending messages]\n' + pendingMessages.join('\n');
   }
 
-  const system = buildSystemPrompt();
+  let system = buildSystemPrompt();
+  // Description-driven skills index from the host (jsclaw#47): names +
+  // descriptions + readable paths; bodies are read on demand with tools.
+  if (input.skillsIndex) {
+    system = system ? `${system}\n\n${input.skillsIndex}` : input.skillsIndex;
+  }
   const tools = resolveTools();
 
   let currentSessionId = sessionId || undefined;

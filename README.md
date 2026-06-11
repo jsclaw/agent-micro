@@ -59,7 +59,7 @@ Output arrives as sentinel-delimited JSON on stdout (jsclaw's `ContainerOutput` 
 | `ANTHROPIC_API_KEY` | — | Required (or `ANTHROPIC_AUTH_TOKEN`) |
 | `ANTHROPIC_BASE_URL` | `https://api.anthropic.com` | Alternate endpoint/proxy |
 | `JSCLAW_MICRO_MODEL` | `claude-sonnet-4-6` | Default model (ContainerInput `model` wins) |
-| `JSCLAW_WORKSPACE` | `/workspace/group` | Group workspace dir |
+| `JSCLAW_WORKSPACE` | `/workspace/agent` | Agent workspace dir |
 | `JSCLAW_IPC_BASE` | `/workspace/ipc` | IPC base dir |
 | `JSCLAW_SYSTEM_PROMPT` | — | Extra system prompt |
 | `JSCLAW_ALLOWED_TOOLS` | all | JSON array of allowed tool names |

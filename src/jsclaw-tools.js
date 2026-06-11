@@ -4,9 +4,9 @@
  * become atomic JSON file writes that the host's IPC watcher picks up.
  *
  * Environment variables (set by host):
- *   JSCLAW_CHAT_JID     - Chat identifier for this group
- *   JSCLAW_GROUP_FOLDER - Group folder name
- *   JSCLAW_IS_MAIN      - 'true' if this is the admin group
+ *   JSCLAW_CHAT_JID     - Chat identifier for this agent
+ *   JSCLAW_AGENT_ID - Agent folder name
+ *   JSCLAW_IS_MAIN      - 'true' if this is the admin agent
  *   JSCLAW_IPC_BASE     - IPC base dir (default /workspace/ipc)
  */
 
@@ -58,7 +58,7 @@ export const JSCLAW_TOOL_DEFS = [
       properties: {
         text: { type: 'string', description: 'Message text to send' },
         sender: { type: 'string', description: 'Optional sender name for multi-persona' },
-        target_jid: { type: 'string', description: 'Target chat JID (main group only, for cross-group messaging)' },
+        target_jid: { type: 'string', description: 'Target chat JID (main agent only, for cross-agent messaging)' },
       },
       required: ['text'],
     },
@@ -73,14 +73,14 @@ export const JSCLAW_TOOL_DEFS = [
         schedule_type: { type: 'string', enum: ['cron', 'interval', 'once'], description: 'Type of schedule' },
         schedule_value: { type: 'string', description: 'Cron expression, interval in ms, or ISO date' },
         context_mode: { type: 'string', enum: ['fresh', 'resume'], description: 'Whether to resume existing session or start fresh' },
-        target_group_jid: { type: 'string', description: 'Target group for the task (main only)' },
+        target_agent_jid: { type: 'string', description: 'Target agent for the task (main only)' },
       },
       required: ['prompt', 'schedule_type', 'schedule_value'],
     },
   },
   {
     name: 'list_tasks',
-    description: 'List all scheduled tasks for this group.',
+    description: 'List all scheduled tasks for this agent.',
     input_schema: { type: 'object', properties: {} },
   },
   {
@@ -128,31 +128,31 @@ export const JSCLAW_TOOL_NAMES = new Set(JSCLAW_TOOL_DEFS.map((t) => t.name));
  */
 export function executeJsclawTool(name, input) {
   const chatJid = process.env.JSCLAW_CHAT_JID || '';
-  const groupFolder = process.env.JSCLAW_GROUP_FOLDER || '';
+  const agentId = process.env.JSCLAW_AGENT_ID || '';
 
   switch (name) {
     case 'send_message': {
       const { text, sender, target_jid: targetJid } = input;
       if (targetJid && !isMain()) {
-        return 'Error: Only the main group can send cross-group messages.';
+        return 'Error: Only the main agent can send cross-agent messages.';
       }
       writeIpcFile(join(ipcBase(), 'messages'), {
         text,
         sender: sender || undefined,
         targetJid: targetJid || chatJid,
-        sourceGroup: groupFolder,
+        sourceAgent: agentId,
         timestamp: new Date().toISOString(),
       });
       return `Message sent: "${text.slice(0, 100)}${text.length > 100 ? '...' : ''}"`;
     }
 
     case 'schedule_task': {
-      const { prompt, schedule_type: scheduleType, schedule_value: scheduleValue, context_mode: contextMode, target_group_jid: targetGroupJid } = input;
+      const { prompt, schedule_type: scheduleType, schedule_value: scheduleValue, context_mode: contextMode, target_agent_jid: targetAgentJid } = input;
       if (scheduleType === 'cron' && !isValidCron(scheduleValue)) {
         return `Error: Invalid cron expression: ${scheduleValue}`;
       }
-      if (targetGroupJid && !isMain()) {
-        return 'Error: Only the main group can schedule tasks for other groups.';
+      if (targetAgentJid && !isMain()) {
+        return 'Error: Only the main agent can schedule tasks for other agents.';
       }
       writeIpcFile(join(ipcBase(), 'tasks'), {
         type: 'schedule_task',
@@ -161,10 +161,10 @@ export function executeJsclawTool(name, input) {
           schedule_type: scheduleType,
           schedule_value: scheduleValue,
           context_mode: contextMode || 'fresh',
-          chat_jid: targetGroupJid || chatJid,
-          group_folder: groupFolder,
+          chat_jid: targetAgentJid || chatJid,
+          agent_folder: agentId,
         },
-        sourceGroup: groupFolder,
+        sourceAgent: agentId,
         timestamp: new Date().toISOString(),
       });
       return `Task scheduled: ${scheduleType} "${prompt.slice(0, 100)}"`;
@@ -189,7 +189,7 @@ export function executeJsclawTool(name, input) {
       writeIpcFile(join(ipcBase(), 'tasks'), {
         type: name,
         data: { task_id: input.task_id },
-        sourceGroup: groupFolder,
+        sourceAgent: agentId,
         timestamp: new Date().toISOString(),
       });
       return `Task ${name.replace('_task', '')}: ${input.task_id}`;

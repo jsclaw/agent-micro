@@ -8,11 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /workspace/group /workspace/ipc/messages /workspace/ipc/tasks /workspace/ipc/input /app
+RUN mkdir -p /workspace/agent /workspace/ipc/messages /workspace/ipc/tasks /workspace/ipc/input /app
 
 COPY runner.js /app/runner.js
 COPY src /app/src
 
-WORKDIR /workspace/group
+WORKDIR /workspace/agent
 
 ENTRYPOINT ["node", "/app/runner.js"]

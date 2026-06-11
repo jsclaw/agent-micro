@@ -9,7 +9,7 @@ function makeIpc() {
   const dir = mkdtempSync(join(tmpdir(), 'micro-ipc-'));
   process.env.JSCLAW_IPC_BASE = dir;
   process.env.JSCLAW_CHAT_JID = 'chat-1';
-  process.env.JSCLAW_GROUP_FOLDER = 'main';
+  process.env.JSCLAW_AGENT_ID = 'main';
   process.env.JSCLAW_IS_MAIN = 'false';
   return dir;
 }
@@ -37,13 +37,13 @@ test('send_message writes an IPC message file', () => {
   const [msg] = readIpcFiles(dir, 'messages');
   assert.equal(msg.text, 'hello there');
   assert.equal(msg.targetJid, 'chat-1');
-  assert.equal(msg.sourceGroup, 'main');
+  assert.equal(msg.sourceAgent, 'main');
 });
 
-test('cross-group send is rejected for non-main groups', () => {
+test('cross-agent send is rejected for non-main agents', () => {
   makeIpc();
   const result = executeJsclawTool('send_message', { text: 'x', target_jid: 'other-chat' });
-  assert.match(result, /^Error: Only the main group/);
+  assert.match(result, /^Error: Only the main agent/);
 });
 
 test('schedule_task validates cron and writes an IPC task file', () => {

@@ -7,8 +7,8 @@
  *
  * Environment variables (set by host):
  *   JSCLAW_CHAT_JID        - Chat identifier
- *   JSCLAW_GROUP_FOLDER    - Group folder name
- *   JSCLAW_IS_MAIN         - 'true' if admin group
+ *   JSCLAW_AGENT_ID    - Agent folder name
+ *   JSCLAW_IS_MAIN         - 'true' if admin agent
  *   JSCLAW_SYSTEM_PROMPT   - Optional additional system prompt
  *   JSCLAW_ALLOWED_TOOLS   - Optional JSON array of allowed tool names
  *   JSCLAW_MICRO_MODEL     - Default model (fallback claude-sonnet-4-6)
@@ -36,7 +36,7 @@ const OUTPUT_END_MARKER = '---JSCLAW_OUTPUT_END---';
 // identity first, then instructions, then context.
 const IDENTITY_FILES = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'TOOLS.md', 'USER.md'];
 
-const HARNESS_PROMPT = `You are an autonomous agent running headless in a container. Your working directory is the group workspace; files you write there persist between runs. Use the tools to act; your final text is delivered to the user as your reply. To remember something across sessions, write a markdown file under memory/.`;
+const HARNESS_PROMPT = `You are an autonomous agent running headless in a container. Your working directory is the agent workspace; files you write there persist between runs. Use the tools to act; your final text is delivered to the user as your reply. To remember something across sessions, write a markdown file under memory/.`;
 
 function ipcInputDir() {
   return join(process.env.JSCLAW_IPC_BASE || '/workspace/ipc', 'input');
@@ -63,7 +63,7 @@ function writeOutput(output) {
 }
 
 /**
- * Load memory/*.md from the group workspace, truncated to a character
+ * Load memory/*.md from the agent workspace, truncated to a character
  * budget (JSCLAW_MEMORY_MAX_CHARS, default 8000 ≈ 2k tokens).
  * @returns {string} Memory section for the system prompt, or ''
  */

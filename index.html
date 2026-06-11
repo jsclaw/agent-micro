@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>jsclaw-agent-micro - Zero-Dependency Agent Runner</title>
+  <meta name="description" content="Zero-dependency agent runner for jsclaw containers. Pure JavaScript ESM, Anthropic API over fetch, ~1,000 lines.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f8f9fb;
+      --bg-code: #f1f3f7;
+      --text: #1a1a2e;
+      --text-secondary: #555770;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --green: #059669;
+      --green-light: #d1fae5;
+      --border: #e2e5ea;
+      --radius: 10px;
+      --max-w: 1080px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    code, pre, .mono {
+      font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+    }
+
+    nav {
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px); z-index: 10;
+    }
+    nav .inner {
+      max-width: var(--max-w); margin: 0 auto; padding: 14px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .logo { font-weight: 700; font-size: 1.05rem; }
+    .logo span { color: var(--accent); font-family: monospace; }
+    nav .links a {
+      color: var(--text-secondary); text-decoration: none; margin-left: 22px; font-size: 0.92rem;
+    }
+    nav .links a:hover { color: var(--accent); }
+
+    .hero { max-width: var(--max-w); margin: 0 auto; padding: 72px 24px 56px; text-align: center; }
+    .badge-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+    h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.15; letter-spacing: -0.02em; }
+    h1 .highlight { color: var(--accent); }
+    .tagline {
+      max-width: 620px; margin: 18px auto 30px; color: var(--text-secondary); font-size: 1.1rem;
+    }
+    .install-box {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 18px; font-family: monospace; font-size: 0.95rem; cursor: default;
+    }
+    .install-box .dollar { color: var(--green); }
+    .hero-links { margin-top: 24px; }
+    .hero-links a { color: var(--accent); text-decoration: none; margin: 0 12px; font-size: 0.95rem; }
+    .hero-links a:hover { text-decoration: underline; }
+
+    section { padding: 56px 0; }
+    section.alt { background: var(--bg-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .section-inner { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+    .section-title { font-size: 1.7rem; text-align: center; letter-spacing: -0.01em; }
+    .section-subtitle { text-align: center; color: var(--text-secondary); margin: 8px auto 36px; max-width: 560px; }
+
+    table {
+      border-collapse: collapse; margin: 0 auto; background: var(--bg);
+      border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+      font-size: 0.95rem; min-width: min(640px, 100%);
+    }
+    th, td { padding: 12px 18px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: var(--bg-code); font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    td.good { color: var(--green); font-weight: 600; }
+    .table-wrap { overflow-x: auto; }
+
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;
+    }
+    .feature-card {
+      background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px;
+    }
+    .feature-card h3 { font-size: 1.02rem; margin-bottom: 6px; }
+    .feature-card h3 code { background: var(--bg-code); padding: 1px 6px; border-radius: 5px; font-size: 0.92em; }
+    .feature-card p { color: var(--text-secondary); font-size: 0.92rem; }
+
+    pre {
+      background: #1a1a2e; color: #e8eaf2; border-radius: var(--radius);
+      padding: 20px 22px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+      max-width: 720px; margin: 0 auto;
+    }
+    pre .c { color: #7d819c; }
+    pre .g { color: #6ee7b7; }
+
+    footer { padding: 36px 24px; text-align: center; color: var(--text-secondary); font-size: 0.88rem; }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="inner">
+      <div class="logo"><span>&gt;_</span> jsclaw-agent-micro</div>
+      <div class="links">
+        <a href="#compare">Compare</a>
+        <a href="#inside">Inside</a>
+        <a href="#quickstart">Quick Start</a>
+        <a href="https://github.com/jsclaw/agent-micro">GitHub</a>
+        <a href="https://jsclaw.dev/jsclaw/">jsclaw</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="badge-row">
+      <img src="https://img.shields.io/badge/license-MIT-059669" alt="MIT license">
+      <img src="https://img.shields.io/badge/node-%3E%3D20-555770" alt="node >= 20">
+      <img src="https://img.shields.io/badge/deps-0-059669" alt="zero dependencies">
+      <img src="https://img.shields.io/badge/~1,000-lines-2563eb" alt="~1,000 lines">
+    </div>
+    <h1>The agent runner you can<br>read in <span class="highlight">one sitting</span></h1>
+    <p class="tagline">
+      A zero-dependency, open-source replacement for the Claude Code runner inside
+      <a href="https://jsclaw.dev/jsclaw/" style="color:var(--accent); text-decoration:none;">jsclaw</a> containers.
+      Pure JavaScript ESM, Anthropic API over fetch. No node_modules. No black boxes.
+    </p>
+    <div class="install-box">
+      <span class="dollar">$</span>
+      <span class="cmd">npx jsclaw config set containerImage jsclaw-agent-micro:latest</span>
+    </div>
+    <div class="hero-links">
+      <a href="https://github.com/jsclaw/agent-micro">View on GitHub &rarr;</a>
+    </div>
+  </div>
+
+  <!-- COMPARISON -->
+  <section class="alt" id="compare">
+    <div class="section-inner">
+      <h2 class="section-title">Open source, top to bottom</h2>
+      <p class="section-subtitle">Same container contract as the default runner — a fraction of the footprint, none of the proprietary blob.</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th></th><th>default runner</th><th>agent-micro</th></tr>
+          <tr><td>Agent harness</td><td>Claude Code (proprietary, 238 MB)</td><td class="good">this repo (MIT, ~50 kB)</td></tr>
+          <tr><td>npm dependencies</td><td>claude-code, MCP SDK, cron-parser</td><td class="good">none</td></tr>
+          <tr><td>Container image</td><td>~1.5 GB</td><td class="good">~150 MB</td></tr>
+          <tr><td>Auditable</td><td>partially</td><td class="good">every line</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSIDE -->
+  <section id="inside">
+    <div class="section-inner">
+      <h2 class="section-title">What's inside</h2>
+      <p class="section-subtitle">~1,000 lines on the Node standard library. The container is the sandbox; the loop is just a REPL with hands.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <h3><code>runner.js</code> — drop-in contract</h3>
+          <p>ContainerInput on stdin, sentinel-delimited ContainerOutput on stdout. Identity files, memory/*.md, IPC polling — identical to the default runner.</p>
+        </div>
+        <div class="feature-card">
+          <h3><code>api.js</code> — fetch, nothing else</h3>
+          <p>Anthropic Messages API with retries, backoff, and prompt caching via cache_control. Works with ANTHROPIC_BASE_URL proxies.</p>
+        </div>
+        <div class="feature-card">
+          <h3><code>loop.js</code> — the agent loop</h3>
+          <p>Send, execute tool calls, append results, repeat. Context trimming keeps long sessions under the window.</p>
+        </div>
+        <div class="feature-card">
+          <h3><code>tools.js</code> — six core tools</h3>
+          <p>bash, read_file, write_file, edit_file, glob, grep — unrestricted inside the container, because the container is the boundary.</p>
+        </div>
+        <div class="feature-card">
+          <h3><code>jsclaw-tools.js</code> — IPC, no MCP</h3>
+          <p>send_message, schedule_task and friends as plain in-process functions writing atomic JSON files the host watcher picks up.</p>
+        </div>
+        <div class="feature-card">
+          <h3><code>session.js</code> — sessions are JSON</h3>
+          <p>A session is the raw messages array on disk. Resume is a file read. No daemon, no database.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICKSTART -->
+  <section class="alt" id="quickstart">
+    <div class="section-inner">
+      <h2 class="section-title">Quick start</h2>
+      <p class="section-subtitle">Build the image and point jsclaw at it — or run it bare for development.</p>
+      <pre><span class="c"># Build the container</span>
+git clone https://github.com/jsclaw/agent-micro && cd agent-micro
+docker build -t jsclaw-agent-micro:latest -f container/Dockerfile .
+
+<span class="c"># Point jsclaw at it</span>
+npx jsclaw config set containerImage jsclaw-agent-micro:latest
+
+<span class="c"># Or standalone, no container</span>
+export ANTHROPIC_API_KEY=sk-ant-...
+echo '{"prompt": "list the files here"}' | node runner.js</pre>
+    </div>
+  </section>
+
+  <footer>
+    MIT licensed. Part of the <a href="https://github.com/jsclaw">jsclaw</a> project.
+  </footer>
+
+</body>
+</html>

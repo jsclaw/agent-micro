@@ -26,6 +26,7 @@
 import { readdirSync, readFileSync, unlinkSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { runAgentLoop, ALL_TOOL_DEFS } from './src/loop.js';
+import { connectMcpServers } from './src/mcp.js';
 import { loadSession, saveSession } from './src/session.js';
 import { workspaceDir } from './src/tools.js';
 
@@ -228,8 +229,11 @@ async function main() {
     }
   }
 
+  // External MCP servers (streamable HTTP): discover tools before the
+  // first turn; unreachable servers degrade to a warning.
+  let mcp = { tools: [], executors: new Map() };
   if (extraMcpServers && Object.keys(extraMcpServers).length > 0) {
-    process.stderr.write(`jsclaw-agent-micro: external MCP servers not yet supported, ignoring: ${Object.keys(extraMcpServers).join(', ')}\n`);
+    mcp = await connectMcpServers(extraMcpServers, (msg) => process.stderr.write(`jsclaw-agent-micro: ${msg}\n`));
   }
 
   // Build initial prompt
@@ -250,7 +254,7 @@ async function main() {
   if (input.skillsIndex) {
     system = system ? `${system}\n\n${input.skillsIndex}` : input.skillsIndex;
   }
-  const tools = resolveTools();
+  const tools = [...resolveTools(), ...mcp.tools];
 
   let currentSessionId = sessionId || undefined;
   let messages = loadSession(currentSessionId);
@@ -264,6 +268,7 @@ async function main() {
         system,
         model,
         tools,
+        externalTools: mcp.executors,
       });
 
       currentSessionId = saveSession(currentSessionId, messages);

@@ -4,7 +4,7 @@
   "description": "Zero-dependency agent runner for jsclaw containers. Pure JavaScript ESM, Anthropic API over fetch.",
   "type": "module",
   "main": "./src/index.js",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jsclaw/agent-micro.git"

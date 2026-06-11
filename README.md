@@ -1,6 +1,6 @@
 # jsclaw-agent-micro
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue.svg)](LICENSE)
 
 Zero-dependency agent runner for [jsclaw](https://github.com/jsclaw/jsclaw) containers. Pure JavaScript ESM, no `node_modules`, talking to the Anthropic Messages API directly over `fetch`.
 
@@ -8,7 +8,7 @@ A drop-in replacement for jsclaw's default Claude Code runner: same stdin/stdout
 
 |                    | default runner (`jsclaw-agent`) | **`jsclaw-agent-micro`** |
 |--------------------|-------------------------------|--------------------------|
-| Agent harness      | Claude Code (proprietary, 238 MB) | this repo (MIT, ~50 kB) |
+| Agent harness      | Claude Code (proprietary, 238 MB) | this repo (AGPL, ~50 kB) |
 | npm dependencies   | claude-code, MCP SDK, cron-parser | **none** |
 | Container image    | ~1.5 GB (incl. chromium)      | ~150 MB |
 | Open source        | partially                     | **top to bottom** |
@@ -82,4 +82,4 @@ npm run lint
 
 ## License
 
-MIT
+AGPL-3.0-or-later. Copyright (c) 2026 Melvin Carvalho.

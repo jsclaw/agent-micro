@@ -27,6 +27,7 @@ import { readdirSync, readFileSync, unlinkSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { runAgentLoop, ALL_TOOL_DEFS } from './src/loop.js';
 import { connectMcpServers } from './src/mcp.js';
+import { loadMemory } from './src/memory.js';
 import { workspaceDir } from './src/tools.js';
 
 const OUTPUT_START_MARKER = '---JSCLAW_OUTPUT_START---';
@@ -36,7 +37,7 @@ const OUTPUT_END_MARKER = '---JSCLAW_OUTPUT_END---';
 // identity first, then instructions, then context.
 const IDENTITY_FILES = ['SOUL.md', 'IDENTITY.md', 'AGENTS.md', 'TOOLS.md', 'USER.md'];
 
-const HARNESS_PROMPT = `You are an autonomous agent running headless in a container. Your working directory is the agent workspace; files you write there persist between runs. Use the tools to act; your final text is delivered to the user as your reply. To remember something across sessions, write a markdown file under memory/.`;
+const HARNESS_PROMPT = `You are an autonomous agent running headless in a container. Your working directory is the agent workspace; files you write there persist between runs. Use the tools to act; your final text is delivered to the user as your reply. To remember across sessions: put curated, always-relevant facts in MEMORY.md, and detailed or dated notes in memory/ (e.g. memory/2026-06-12.md) — those are surfaced to you as an index and read on demand.`;
 
 function ipcInputDir() {
   return join(process.env.JSCLAW_IPC_BASE || '/workspace/ipc', 'input');
@@ -62,46 +63,6 @@ function writeOutput(output) {
   process.stdout.write(`\n${OUTPUT_START_MARKER}\n${JSON.stringify(output)}\n${OUTPUT_END_MARKER}\n`);
 }
 
-/**
- * Load memory/*.md from the agent workspace, truncated to a character
- * budget (JSCLAW_MEMORY_MAX_CHARS, default 8000 ≈ 2k tokens).
- * @returns {string} Memory section for the system prompt, or ''
- */
-function loadMemory() {
-  const maxChars = Number(process.env.JSCLAW_MEMORY_MAX_CHARS) || 8000;
-  const dir = join(workspaceDir(), 'memory');
-  let names;
-  try {
-    names = readdirSync(dir).filter((n) => n.endsWith('.md')).sort();
-  } catch {
-    return '';
-  }
-
-  const parts = [];
-  let used = 0;
-  for (const name of names) {
-    let content;
-    try {
-      content = readFileSync(join(dir, name), 'utf-8').trim();
-    } catch {
-      continue;
-    }
-    if (!content || /^#[^\n]*$/.test(content)) continue; // empty or heading-only
-
-    const section = `## ${name}\n${content}`;
-    if (used + section.length > maxChars) {
-      const remaining = maxChars - used;
-      if (remaining > 100) parts.push(section.slice(0, remaining) + '\n[...memory truncated]');
-      break;
-    }
-    parts.push(section);
-    used += section.length + 2;
-  }
-
-  return parts.length > 0
-    ? `# Memory\n\nYour persistent memory (read/write these files under memory/ to remember things):\n\n${parts.join('\n\n')}`
-    : '';
-}
 
 /**
  * Build the system prompt: harness preamble, identity files, memory,
@@ -118,7 +79,7 @@ function buildSystemPrompt() {
       // file absent — identity files are all optional
     }
   }
-  const memory = loadMemory();
+  const memory = loadMemory(workspaceDir());
   if (memory) parts.push(memory);
   const extra = process.env.JSCLAW_SYSTEM_PROMPT?.trim();
   if (extra) parts.push(extra);

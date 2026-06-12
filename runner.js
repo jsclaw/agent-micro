@@ -27,7 +27,6 @@ import { readdirSync, readFileSync, unlinkSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { runAgentLoop, ALL_TOOL_DEFS } from './src/loop.js';
 import { connectMcpServers } from './src/mcp.js';
-import { loadSession, saveSession } from './src/session.js';
 import { workspaceDir } from './src/tools.js';
 
 const OUTPUT_START_MARKER = '---JSCLAW_OUTPUT_START---';
@@ -256,8 +255,10 @@ async function main() {
   }
   const tools = [...resolveTools(), ...mcp.tools];
 
-  let currentSessionId = sessionId || undefined;
-  let messages = loadSession(currentSessionId);
+  // Host owns session transcripts (jsclaw#79): prior messages arrive in
+  // ContainerInput, the updated array is returned in ContainerOutput.
+  // The runner persists nothing — keeping the agent workspace clean.
+  let messages = Array.isArray(input.messages) ? input.messages : [];
 
   // Query loop: run query, wait for IPC, run again
   while (true) {
@@ -271,12 +272,10 @@ async function main() {
         externalTools: mcp.executors,
       });
 
-      currentSessionId = saveSession(currentSessionId, messages);
-
       writeOutput({
         status: 'success',
         result,
-        newSessionId: currentSessionId,
+        messages,
         ...(usage && { usage }),
       });
     } catch (err) {
@@ -284,7 +283,7 @@ async function main() {
         status: 'error',
         result: null,
         error: err.message,
-        newSessionId: currentSessionId,
+        messages,
       });
     }
 
